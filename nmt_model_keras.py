@@ -31,11 +31,7 @@ class NmtModel(object):
     source_words = Input(shape=(None,),dtype='int32')
     target_words = Input(shape=(None,), dtype='int32')
 
-    """
-    Task 1 encoder
-    
-    Start
-    """
+
     embedding_source = Embedding(input_dim=self.vocab_source_size, output_dim=self.embedding_size, mask_zero=True)
     source_words_embedding = embedding_source(source_words)
     source_dropout = Dropout(self.embedding_dropout_rate)(source_words_embedding)
@@ -47,9 +43,7 @@ class NmtModel(object):
     target_words_embedding = embedding_target(target_words)
     target_words_embeddings = Dropout(self.embedding_dropout_rate)(target_words_embedding)
 
-    """
-    End Task 1
-    """
+
     encoder_states = [encoder_state_h,encoder_state_c]
 
     decoder_lstm = LSTM(self.hidden_size,recurrent_dropout=self.hidden_dropout_rate,return_sequences=True,return_state=True)
@@ -77,12 +71,6 @@ class NmtModel(object):
     decoder_state_input_c = Input(shape=(self.hidden_size,))
     encoder_outputs_input = Input(shape=(None,self.hidden_size,))
 
-    """
-    Task 2 decoder for inference
-    
-    Start
-    """
-
     decoder_states = [decoder_state_input_h, decoder_state_input_c]
     decoder_outputs_test, decoder_state_output_h,decoder_state_output_c = decoder_lstm(target_words_embeddings,
                                                                                       initial_state=decoder_states)
@@ -91,10 +79,6 @@ class NmtModel(object):
       decoder_outputs_test=decoder_attention([encoder_outputs_input,decoder_outputs_test])
 
     decoder_outputs_test = decoder_dense(decoder_outputs_test)
-    
-    """
-    End Task 2 
-    """
 
     self.decoder_model = Model([target_words,decoder_state_input_h,decoder_state_input_c,encoder_outputs_input],
                                [decoder_outputs_test,decoder_state_output_h,decoder_state_output_c])
@@ -188,20 +172,13 @@ class AttentionLayer(Layer):
   def call(self, inputs, mask=None):
     encoder_outputs, decoder_outputs = inputs
 
-    """
-    Task 3 attention
-    
-    Start
-    """
+
 
     decoder_outputs_t = K.permute_dimensions(decoder_outputs, pattern=(0, 2, 1))
     luong_score = K.expand_dims(K.softmax(K.batch_dot(encoder_outputs, decoder_outputs_t), axis=1))
     encoder_vector = K.sum(K.expand_dims(encoder_outputs, axis=2) * luong_score, axis=1)
 
 
-    """
-    End Task 3
-    """
     new_decoder_outputs = K.concatenate([decoder_outputs, encoder_vector])
     return new_decoder_outputs
 
